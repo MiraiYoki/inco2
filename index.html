@@ -1,0 +1,3475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线监控检测系统 - xx石化</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --blur: blur(12px);
+            --blur-lg: blur(24px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(96, 165, 250, 0.7);
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #e6f0ff 0%, #d0e4ff 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8d 50%, #4a8bc2 100%);
+            padding: 16px 32px;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 25px 25px;
+            pointer-events: none;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: techShine 6s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes techShine {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: auto;
+            height: 44px;
+            background: none;
+            box-shadow: none;
+        }
+
+        .logo-icon img {
+            height: 100%;
+            width: auto;
+            display: block;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+
+        .header-center {
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .header-time {
+            text-align: right;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+
+        .header-time .date {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 0;
+            padding: 12px 24px;
+            flex-shrink: 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: var(--blur);
+            border-radius: 12px;
+            padding: 12px 16px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.1);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 60px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .stat-label svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-feature-settings: 'tnum';
+            margin-left: auto;
+            flex-shrink: 0;
+            padding-right: 28px;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: var(--text-primary); }
+        .stat-card:nth-child(2) .stat-value { color: var(--success); }
+        .stat-card:nth-child(3) .stat-value { color: var(--primary); }
+        .stat-card:nth-child(4) .stat-value { color: var(--danger); }
+        .stat-card:nth-child(5) .stat-value { color: var(--warning); }
+
+        .expand-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover .expand-icon {
+            background: var(--primary);
+        }
+
+        .stat-card:hover .expand-icon svg {
+            stroke: white;
+        }
+
+        .expand-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--text-secondary);
+        }
+
+        .dropdown-wrapper {
+            position: relative;
+        }
+
+        .dropdown-content {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: var(--blur-lg);
+            -webkit-backdrop-filter: var(--blur-lg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-xl);
+            padding: 12px;
+            z-index: 1000;
+            display: none;
+            animation: dropdownFade 0.2s ease;
+        }
+
+        .dropdown-content.active {
+            display: block;
+        }
+
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item {
+            padding: 10px 14px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dropdown-item:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .dropdown-item .location {
+            color: inherit;
+        }
+
+        .dropdown-item .value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .dropdown-item:hover .value {
+            color: white;
+        }
+
+        .dropdown-content.side-menu {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            margin-left: 8px;
+            right: auto;
+            width: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            z-index: 1001;
+        }
+
+        .dropdown-item.clickable {
+            cursor: pointer;
+        }
+
+        .dropdown-item.clickable:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .sub-menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sub-menu-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .sub-menu-item:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .sub-menu-item:hover .sub-value {
+            color: white;
+        }
+
+        .sub-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .sub-menu-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 540px 1fr;
+            gap: 20px;
+            flex: 0 0 calc(100vh - 180px);
+            padding: 0 24px 12px;
+            overflow: hidden;
+            max-height: calc(100vh - 180px);
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            height: calc(100vh - 180px);
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .chart-card-horizontal {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: var(--blur);
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-height: 80px;
+        }
+
+        .chart-left {
+            position: relative;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-right {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chart-right h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .chart-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chart-stats .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-stats .stat-item .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .charts-row .chart-card-horizontal:first-child .chart-stats .stat-item:first-child .dot {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(16, 185, 129, 1), 0 0 24px rgba(16, 185, 129, 0.6);
+                transform: scale(1.2);
+            }
+        }
+
+        .chart-stats .stat-item .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .status-chart-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
+            animation: number-glow 2s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes number-glow {
+            0%, 100% {
+                text-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+            }
+            50% {
+                text-shadow: 0 0 16px rgba(16, 185, 129, 1), 0 0 24px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        .chart-stats .stat-item .value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-left: auto;
+        }
+
+        .chart-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .donut-chart {
+            position: relative;
+            width: 90px;
+            height: 90px;
+        }
+
+        .donut-chart svg {
+            transform: rotate(-90deg);
+        }
+
+        .donut-chart circle {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+
+        .chart-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .chart-center .number {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chart-center .label {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .legend-dot.online { background: var(--success); }
+        .legend-dot.warning { background: var(--warning); }
+        .legend-dot.offline { background: #cbd5e1; }
+        .legend-dot.level1 { background: var(--danger); }
+        .legend-dot.level2 { background: var(--warning); }
+        .legend-dot.level3 { background: var(--success); }
+
+        .legend-value {
+            margin-left: auto;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .data-table-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: var(--blur);
+            border-radius: 16px;
+            padding: 18px 20px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            max-height: calc(100vh - 300px);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .table-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-header h3 svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--primary);
+        }
+
+        .search-box {
+            position: relative;
+            width: 180px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            stroke: var(--text-secondary);
+        }
+
+        .filter-dropdown {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .filter-btn {
+            padding: 5px 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 2px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 8px 6px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        td {
+            padding: 8px 6px;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        .device-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 4px;
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .rate-danger { color: var(--danger); font-weight: 600; }
+        .rate-warning { color: var(--warning); font-weight: 600; }
+        .rate-normal { color: var(--success); }
+
+        .right-panel {
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.95) 0%, rgba(45, 90, 141, 0.95) 50%, rgba(74, 139, 194, 0.95) 100%);
+            backdrop-filter: var(--blur-lg);
+            -webkit-backdrop-filter: var(--blur-lg);
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 60px rgba(59, 130, 246, 0.15);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 180px);
+        }
+
+        .right-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 10% 10%, rgba(96, 165, 250, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 90%, rgba(144, 205, 244, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .right-panel h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .right-panel h3 svg {
+            width: 20px;
+            height: 20px;
+            stroke: #60a5fa;
+        }
+
+        .flow-carousel {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: transparent;
+            border-radius: 16px;
+            min-height: 0;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: 
+                linear-gradient(rgba(59, 130, 246, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.15) 1px, transparent 1px),
+                linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+                rgba(30, 41, 59, 0.6);
+            background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+        }
+
+        #flowChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-controls {
+            position: absolute;
+            bottom: 175px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 2001;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .control-btn:hover {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .flow-expand-overlay {
+            position: absolute;
+            top: var(--start-y, 50%);
+            left: var(--start-x, 50%);
+            width: var(--start-size, 80px);
+            height: var(--start-size, 80px);
+            background: rgba(30, 41, 59, 0.98);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            transition: opacity 0.2s;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .flow-expand-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+            animation: expandBox 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+
+        @keyframes expandBox {
+            0% {
+                width: var(--start-size, 80px);
+                height: var(--start-size, 80px);
+                top: var(--start-y, 50%);
+                left: var(--start-x, 50%);
+                opacity: 0.8;
+                border-radius: 12px;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                width: 100%;
+                height: 100%;
+                top: 50%;
+                left: 50%;
+                opacity: 1;
+                border-radius: 16px;
+            }
+        }
+
+        .flow-expand-overlay.closing {
+            animation: closeBox 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes closeBox {
+            0% {
+                width: 100%;
+                height: 100%;
+                top: 50%;
+                left: 50%;
+                opacity: 1;
+                border-radius: 16px;
+            }
+            100% {
+                width: var(--start-size, 80px);
+                height: var(--start-size, 80px);
+                top: var(--start-y, 50%);
+                left: var(--start-x, 50%);
+                opacity: 0;
+                border-radius: 12px;
+            }
+        }
+
+        .flow-expand-overlay .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.15);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .legend-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 10;
+        }
+
+        .legend-title {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 4px;
+        }
+
+        .detail-back {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-back:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .flow-grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .flow-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            overflow: hidden;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .flow-chart {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .flow-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .flow-svg path {
+            fill: none;
+            stroke: #b0bec5;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .flow-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-md);
+        }
+
+        .flow-nav:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .flow-nav:hover svg {
+            stroke: white;
+        }
+
+        .flow-nav svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--text-secondary);
+        }
+
+        .flow-nav.prev {
+            left: 8px;
+        }
+
+        .flow-nav.next {
+            right: 8px;
+        }
+
+        .flow-indicator {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            padding: 6px 12px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .flow-indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .flow-indicator-dot.active {
+            background: var(--primary);
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        .flow-indicator-dot:hover {
+            background: var(--primary-light);
+        }
+
+        .expand-clone {
+            position: absolute;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 10px;
+            border: 1.5px solid var(--primary);
+            pointer-events: none;
+            transition: all 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .process-node {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1.5px solid rgba(226, 232, 240, 0.8);
+            border-radius: 10px;
+            padding: 10px 12px;
+            min-width: 110px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+            transform: translate(-50%, -50%);
+        }
+
+        .process-node:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow: 0 8px 22px rgba(59, 130, 246, 0.15), 0 4px 10px rgba(0, 0, 0, 0.06);
+            border-color: var(--primary);
+        }
+
+        .process-node.active {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg), 0 0 15px rgba(59, 130, 246, 0.25);
+        }
+
+        .process-node.source {
+            border-left: 3px solid var(--primary);
+        }
+
+        .process-node.warn {
+            border-color: var(--warning);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.08);
+        }
+
+        .process-node.danger {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.08);
+        }
+
+        .node-status-dot {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .node-status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        .node-status-dot.warning {
+            background: var(--warning);
+            box-shadow: 0 0 6px var(--warning);
+        }
+
+        .node-status-dot.danger {
+            background: var(--danger);
+            box-shadow: 0 0 6px var(--danger);
+        }
+
+        .node-icon {
+            width: 28px;
+            height: 28px;
+            margin: 0 auto 5px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            font-size: 16px;
+        }
+
+        .node-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: white;
+        }
+
+        .process-node.warn .node-icon {
+            background: linear-gradient(135deg, var(--warning) 0%, #fbbf24 100%);
+        }
+
+        .node-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .node-pts {
+            font-size: 9px;
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .node-dots {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            font-size: 8px;
+            color: var(--text-secondary);
+        }
+
+        .node-d {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .node-d.g { background: var(--success); }
+        .node-d.y { background: var(--warning); }
+        .node-d.r { background: #94a3b8; }
+
+        .node-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 9px;
+        }
+
+        .node-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 5px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+        }
+
+        .node-stat .label {
+            color: var(--text-secondary);
+        }
+
+        .node-stat .value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .node-stat .value.online { color: var(--success); }
+        .node-stat .value.warning { color: var(--warning); }
+        .node-stat .value.danger { color: var(--danger); }
+
+        .detail-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: var(--blur-lg);
+            -webkit-backdrop-filter: var(--blur-lg);
+            border-radius: 16px;
+            z-index: 100;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            transition: all 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .detail-view.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .detail-header {
+            padding: 14px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .detail-header h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .detail-header-sub {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 2px;
+        }
+
+        .detail-back {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-back:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .detail-stats {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            flex-shrink: 0;
+            background: rgba(248, 250, 252, 0.9);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-stat-item {
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: white;
+            border: 1px solid var(--border);
+            flex: 1;
+        }
+
+        .detail-stat-item .ds-val {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .detail-stat-item .ds-lbl {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .detail-stat-item.g .ds-val { color: var(--success); }
+        .detail-stat-item.y .ds-val { color: var(--warning); }
+        .detail-stat-item.r .ds-val { color: var(--text-secondary); }
+        .detail-stat-item.danger .ds-val { color: var(--danger); }
+        .detail-stat-item.warning .ds-val { color: var(--warning); }
+        .detail-stat-item.success .ds-val { color: var(--success); }
+
+        .detail-content {
+            flex: 1;
+            padding: 0;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .device-map {
+            flex: 1;
+            min-height: 280px;
+            background: linear-gradient(180deg, #fafcfd 0%, #f5f7fa 100%);
+            position: relative;
+            margin: 0 20px;
+            margin-top: 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .device-map .dm-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 32px 32px;
+            opacity: 0.5;
+            border-radius: 10px;
+        }
+
+        .center-equip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .center-equip .ce-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .center-equip .ce-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .center-equip .ce-pts {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .monitor-point {
+            position: absolute;
+            z-index: 3;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .monitor-point .mp-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s;
+        }
+
+        .monitor-point:hover .mp-dot {
+            transform: scale(1.2);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        }
+
+        .monitor-point .mp-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 3px;
+            white-space: nowrap;
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mp-dot.level1 { background: var(--danger); }
+        .mp-dot.level2 { background: var(--warning); }
+        .mp-dot.level3 { background: var(--success); }
+
+        .point-popup {
+            display: none;
+            position: absolute;
+            z-index: 30;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            min-width: 200px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+            pointer-events: none;
+        }
+
+        .point-popup.show { display: block; }
+        .point-popup h4 { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .point-popup .pp-row { font-size: 10px; color: var(--text-secondary); margin: 2px 0; display: flex; justify-content: space-between; gap: 12px; }
+        .point-popup .pp-row b { color: var(--text-primary); }
+
+        .device-zone {
+            position: absolute;
+            background: rgba(248, 250, 252, 0.95);
+            border: 2px solid #334155;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .device-zone:hover {
+            border-color: var(--primary);
+            background: rgba(241, 245, 249, 0.98);
+        }
+
+        .device-zone-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .device-zone-count {
+            font-size: 9px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .device-zone.tower {
+            width: 90px;
+            height: 120px;
+            background: rgba(226, 232, 240, 0.95);
+            border-color: #475569;
+        }
+
+        .device-zone.reactor {
+            width: 100px;
+            height: 100px;
+            background: rgba(226, 232, 240, 0.95);
+            border-color: #475569;
+        }
+
+        .device-zone.exchanger {
+            width: 140px;
+            height: 50px;
+            background: rgba(226, 232, 240, 0.95);
+            border-color: #475569;
+        }
+
+        .device-zone.tank {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(226, 232, 240, 0.95);
+            border-color: #475569;
+        }
+
+        .device-zone.pump {
+            width: 60px;
+            height: 60px;
+            background: rgba(226, 232, 240, 0.95);
+            border-color: #475569;
+        }
+
+        .pipe-svg path {
+            stroke: #64748b;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: none;
+        }
+
+        .device-point {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-md);
+            z-index: 10;
+        }
+
+        .device-point:hover {
+            transform: scale(1.25);
+            box-shadow: var(--shadow-lg), 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .device-point.level1 {
+            background: linear-gradient(135deg, var(--danger) 0%, #f87171 100%);
+        }
+
+        .device-point.level2 {
+            background: linear-gradient(135deg, var(--warning) 0%, #fbbf24 100%);
+        }
+
+        .device-point.level3 {
+            background: linear-gradient(135deg, var(--success) 0%, #34d399 100%);
+        }
+
+        .device-legend {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 9px;
+            display: flex;
+            gap: 10px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .device-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .device-legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        .device-legend-dot.level1 { background: var(--danger); }
+        .device-legend-dot.level2 { background: var(--warning); }
+        .device-legend-dot.level3 { background: var(--success); }
+
+        .device-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .device-item {
+            background: var(--bg-secondary);
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .device-item:hover {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .device-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .device-item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .device-item-level {
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 8px;
+            color: white;
+        }
+
+        .device-item-level.level1 { background: var(--danger); }
+        .device-item-level.level2 { background: var(--warning); }
+        .device-item-level.level3 { background: var(--success); }
+
+        .device-item-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        .device-item-stats span {
+            font-weight: 500;
+        }
+
+        .point-tooltip {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: var(--blur-lg);
+            -webkit-backdrop-filter: var(--blur-lg);
+            border-radius: 10px;
+            padding: 11px;
+            box-shadow: var(--shadow-xl);
+            z-index: 200;
+            display: none;
+            border: 1px solid var(--border);
+            min-width: 190px;
+        }
+
+        .point-tooltip.active {
+            display: block;
+            animation: tooltipFade 0.2s ease;
+        }
+
+        @keyframes tooltipFade {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .point-tooltip h5 {
+            font-size: 12px;
+            color: var(--primary);
+            margin-bottom: 7px;
+            font-weight: 600;
+        }
+
+        .point-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .point-tooltip-label {
+            color: var(--text-secondary);
+        }
+
+        .point-tooltip-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: var(--blur-lg);
+            -webkit-backdrop-filter: var(--blur-lg);
+            border-radius: 12px;
+            padding: 16px;
+            max-width: 260px;
+            box-shadow: var(--shadow-xl);
+            z-index: 2000;
+            display: none;
+            border: 1px solid var(--border);
+        }
+
+        .tooltip.active {
+            display: block;
+            animation: tooltipFade 0.2s ease;
+        }
+
+        .tooltip h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tooltip-content {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tooltip-content div {
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tooltip-content span:last-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: modalFade 0.25s ease;
+        }
+
+        @keyframes modalFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 520px;
+            width: 90%;
+            max-height: 75vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+        }
+
+        .modal-close:hover svg {
+            stroke: white;
+        }
+
+        .modal-close svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--text-secondary);
+        }
+
+        .modal-body {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .modal-item {
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .modal-item:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 1400px) {
+            .main-content {
+                grid-template-columns: 480px 1fr;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .stats-bar {
+                grid-template-columns: repeat(3, 1fr);
+                height: auto;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="logo.png" alt="因科创新">
+                </div>
+            </div>
+            <div class="header-center">
+                <h1>在线监控检测系统</h1>
+                <p class="subtitle">xx石化</p>
+            </div>
+            <div class="header-time">
+                <div class="date" id="currentDate">2026年5月18日</div>
+                <div id="currentTime">10:30:45</div>
+            </div>
+        </header>
+
+        <div class="stats-bar">
+            <div class="dropdown-wrapper">
+                <div class="stat-card" onclick="toggleDropdown(this)">
+                    <div class="stat-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        累计监测天数
+                    </div>
+                    <div class="stat-value" id="daysCount">560</div>
+                    <div class="expand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="dropdown-content" id="dropdown-1">
+                    <div class="dropdown-item">
+                        <span class="location">系统运行</span>
+                        <span class="value" id="daysDisplay">560 天</span>
+                    </div>
+                    <div class="dropdown-item">
+                        <span class="location">首次监测</span>
+                        <span class="value">2024-11-08</span>
+                    </div>
+                    <div class="dropdown-item">
+                        <span class="location">最近更新</span>
+                        <span class="value" id="lastUpdate">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropdown-wrapper">
+                <div class="stat-card" onclick="toggleDropdown(this)">
+                    <div class="stat-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        监测点位
+                    </div>
+                    <div class="stat-value">36</div>
+                    <div class="expand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="dropdown-content" id="dropdown-2">
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('焦化装置', this)">
+                        <span class="location">焦化装置</span>
+                        <span class="value">7 个 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('催化装置', this)">
+                        <span class="location">催化装置</span>
+                        <span class="value">6 个 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('重整装置', this)">
+                        <span class="location">重整装置</span>
+                        <span class="value">4 个 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('储运装置', this)">
+                        <span class="location">储运装置</span>
+                        <span class="value">5 个 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('烷基化装置', this)">
+                        <span class="location">烷基化装置</span>
+                        <span class="value">8 个 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('加氢裂化装置', this)">
+                        <span class="location">加氢裂化装置</span>
+                        <span class="value">6 个 →</span>
+                    </div>
+                </div>
+                <div class="dropdown-content side-menu" id="dropdown-2-sub"></div>
+            </div>
+
+            <div class="dropdown-wrapper">
+                <div class="stat-card" onclick="toggleDropdown(this)">
+                    <div class="stat-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                        监测装置
+                    </div>
+                    <div class="stat-value">6</div>
+                    <div class="expand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="dropdown-content" id="dropdown-3">
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('焦化装置', this)">
+                        <span class="location">焦化装置</span>
+                        <span class="value">在线 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('催化装置', this)">
+                        <span class="location">催化装置</span>
+                        <span class="value">在线 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('重整装置', this)">
+                        <span class="location">重整装置</span>
+                        <span class="value">在线 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('储运装置', this)">
+                        <span class="location">储运装置</span>
+                        <span class="value">在线 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('烷基化装置', this)">
+                        <span class="location">烷基化装置</span>
+                        <span class="value">在线 →</span>
+                    </div>
+                    <div class="dropdown-item clickable" onclick="showDevicePoints('加氢裂化装置', this)">
+                        <span class="location">加氢裂化装置</span>
+                        <span class="value">在线 →</span>
+                    </div>
+                </div>
+                <div class="dropdown-content side-menu" id="dropdown-3-sub"></div>
+            </div>
+
+            <div class="dropdown-wrapper">
+                <div class="stat-card" onclick="toggleDropdown(this)">
+                    <div class="stat-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        减薄过大管件
+                    </div>
+                    <div class="stat-value">11</div>
+                    <div class="expand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="dropdown-content" id="dropdown-4">
+                </div>
+            </div>
+
+            <div class="dropdown-wrapper">
+                <div class="stat-card" onclick="toggleDropdown(this)">
+                    <div class="stat-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        腐蚀过快管件
+                    </div>
+                    <div class="stat-value">3</div>
+                    <div class="expand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="dropdown-content" id="dropdown-5">
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="charts-row">
+                    <div class="chart-card-horizontal">
+                        <div class="chart-left">
+                            <div id="statusChart" style="width: 110px; height: 110px;"></div>
+                            <div class="status-chart-center" id="statusChartCenter">36</div>
+                        </div>
+                        <div class="chart-right">
+                            <h3>运行状态</h3>
+                            <div class="chart-stats">
+                                <div class="stat-item">
+                                    <span class="dot" style="background:#10b981;"></span>
+                                    <span class="label">在线</span>
+                                    <span class="value">36</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="dot" style="background:#f59e0b;"></span>
+                                    <span class="label">关注</span>
+                                    <span class="value">5</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="dot" style="background:#64748b;"></span>
+                                    <span class="label">离线</span>
+                                    <span class="value">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card-horizontal">
+                        <div class="chart-left">
+                            <div id="riskChart" style="width: 110px; height: 110px;"></div>
+                        </div>
+                        <div class="chart-right">
+                            <h3>风险等级</h3>
+                            <div class="chart-stats">
+                                <div class="stat-item">
+                                    <span class="dot" style="background:#f59e0b;"></span>
+                                    <span class="label">一级</span>
+                                    <span class="value">4</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="dot" style="background:#f59e0b;"></span>
+                                    <span class="label">二级</span>
+                                    <span class="value">1</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="dot" style="background:#10b981;"></span>
+                                    <span class="label">三级</span>
+                                    <span class="value">31</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-card">
+                    <div class="table-header">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            管件监测数据
+                        </h3>
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" placeholder="搜索..." id="searchInput" onkeyup="filterTable()">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-dropdown">
+                        <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
+                        <button class="filter-btn" onclick="setFilter('level1', this)">一级</button>
+                        <button class="filter-btn" onclick="setFilter('level2', this)">二级</button>
+                        <button class="filter-btn" onclick="setFilter('level3', this)">三级</button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>装置名</th>
+                                    <th>监控位置</th>
+                                    <th>腐蚀速率</th>
+                                    <th>最小壁厚</th>
+                                    <th>减薄率</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span id="panelTitleText">工艺流程图</span>
+                    <button class="detail-back" id="backBtn" onclick="backToOverview()" style="display:none;margin-left:auto;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        返回总流程
+                    </button>
+                </h3>
+                <div class="flow-carousel">
+                    <div class="map-container">
+                        <div id="flowChart"></div>
+                        <div class="map-controls">
+                            <div class="control-btn" onclick="zoomIn()">+</div>
+                            <div class="control-btn" onclick="zoomOut()">−</div>
+                            <div class="control-btn" onclick="resetView()">⟲</div>
+                        </div>
+                        <div class="legend-panel">
+                            <div class="legend-title">风险等级</div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ef4444;"></div>
+                                <span>高风险</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #f59e0b;"></div>
+                                <span>中风险</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #10b981;"></div>
+                                <span>正常</span>
+                            </div>
+                        </div>
+                        <div class="flow-expand-overlay" id="flowExpandOverlay">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">详情</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const tableData = [
+            { device: '催化装置', location: '顶循换热器出口总管弯头', rate: '0.02', minThick: '4.9', thinRate: '30.02%', level: 'level1', posX: 0.35, posY: 0.75 },
+            { device: '催化装置', location: '顶循泵p-2204/3入口管线弯头', rate: '0.01', minThick: '4.86', thinRate: '30.53%', level: 'level1', posX: 0.4, posY: 0.78 },
+            { device: '催化装置', location: '除盐罐D-2211入口管线弯头', rate: '0.03', minThick: '6.26', thinRate: '37.38%', level: 'level1', posX: 0.45, posY: 0.82 },
+            { device: '重整装置', location: 'D-102含硫污水管线弯头', rate: '0.02', minThick: '3.61', thinRate: '34.92%', level: 'level1', posX: 0.55, posY: 0.6 },
+            { device: '焦化装置', location: 'A3101B分馏塔顶空冷南侧入口管线', rate: '0.14', minThick: '4.81', thinRate: '12.56%', level: 'level2', posX: 0.25, posY: 0.65 },
+            { device: '焦化装置', location: 'A3101B分馏塔顶空冷北侧入口管线', rate: '0.23', minThick: '5.41', thinRate: '1.67%', level: 'level3', posX: 0.2, posY: 0.62 },
+            { device: '焦化装置', location: '吸收塔C3301塔顶馏出线', rate: '0', minThick: '5.89', thinRate: '9.40%', level: 'level3', posX: 0.15, posY: 0.68 },
+            { device: '焦化装置', location: '解吸塔C3302塔顶馏出线', rate: '0', minThick: '4.17', thinRate: '16.59%', level: 'level3', posX: 0.3, posY: 0.72 },
+            { device: '焦化装置', location: '稳定塔C-3304塔顶馏出线', rate: '0', minThick: '5.24', thinRate: '4.82%', level: 'level3', posX: 0.35, posY: 0.68 },
+            { device: '焦化装置', location: 'A3101B分馏塔顶空冷南侧出口管线', rate: '0.02', minThick: '6.48', thinRate: '0.00%', level: 'level3', posX: 0.4, posY: 0.62 },
+            { device: '焦化装置', location: 'A3101B分馏塔顶空冷北侧出口管线', rate: '0.01', minThick: '5.11', thinRate: '7.03%', level: 'level3', posX: 0.32, posY: 0.66 },
+            { device: '焦化装置', location: '分馏塔顶出口管线', rate: '0', minThick: '9.97', thinRate: '0.00%', level: 'level3', posX: 0.28, posY: 0.7 },
+            { device: '重整装置', location: '自产瓦斯总管弯头部位', rate: '0.02', minThick: '6.78', thinRate: '0.00%', level: 'level3', posX: 0.6, posY: 0.58 },
+            { device: '重整装置', location: '瓦斯总管腐蚀探针前弯头', rate: '0.01', minThick: '7.13', thinRate: '0.00%', level: 'level3', posX: 0.65, posY: 0.55 },
+            { device: '重整装置', location: 'E-101D出口管线腐蚀探针后弯头', rate: '0.01', minThick: '9.11', thinRate: '11.61%', level: 'level3', posX: 0.58, posY: 0.62 },
+            { device: '储运装置', location: '正丁烷管线自烷基化至30102罐弯头处', rate: '0.01', minThick: '5.05', thinRate: '15.79%', level: 'level3', posX: 0.75, posY: 0.75 },
+            { device: '储运装置', location: '正丁烷管线自烷基化至30103罐弯头处', rate: '0.02', minThick: '6.87', thinRate: '0.00%', level: 'level3', posX: 0.8, posY: 0.72 },
+            { device: '储运装置', location: '正丁烷管线自烷基化至30104罐弯头处', rate: '0.01', minThick: '5.42', thinRate: '9.69%', level: 'level3', posX: 0.85, posY: 0.78 },
+            { device: '储运装置', location: '正丁烷管线自烷基化至30105罐弯头处', rate: '0', minThick: '4.22', thinRate: '29.73%', level: 'level3', posX: 0.9, posY: 0.75 },
+            { device: '储运装置', location: '正丁烷管线自烷基化至30106罐弯头处', rate: '0.01', minThick: '5.18', thinRate: '13.75%', level: 'level3', posX: 0.78, posY: 0.82 },
+            { device: '催化装置', location: '顶循泵p-2204/2入口管线弯头', rate: '0.02', minThick: '5.28', thinRate: '24.54%', level: 'level3', posX: 0.5, posY: 0.85 },
+            { device: '催化装置', location: '顶循泵p-2204/3出口管线水平段', rate: '0.03', minThick: '5.08', thinRate: '27.42%', level: 'level3', posX: 0.55, posY: 0.82 },
+            { device: '催化装置', location: 'E2203出口线底部远端封头直管', rate: '0.03', minThick: '11.89', thinRate: '8.52%', level: 'level3', posX: 0.6, posY: 0.88 },
+            { device: '烷基化装置', location: 'c202底至E210弯头', rate: '0.02', minThick: '6.65', thinRate: '4.95%', level: 'level3', posX: 0.65, posY: 0.9 },
+            { device: '烷基化装置', location: 'P210入口三通', rate: '0', minThick: '5.91', thinRate: '15.57%', level: 'level3', posX: 0.7, posY: 0.88 },
+            { device: '烷基化装置', location: '加剂罐底泵P-302A出口管线三通', rate: '0.02', minThick: '4.9', thinRate: '23.79%', level: 'level3', posX: 0.58, posY: 0.92 },
+            { device: '加氢裂化装置', location: '冷闪蒸气自罐D-104至脱硫装置管线', rate: '0.01', minThick: '5.11', thinRate: '21.41%', level: 'level3', posX: 0.4, posY: 0.65 },
+            { device: '加氢裂化装置', location: '塔顶气自汽提塔C-201至空冷器A-201管线', rate: '0.01', minThick: '8.89', thinRate: '0.00%', level: 'level3', posX: 0.45, posY: 0.62 },
+            { device: '烷基化装置', location: '脱异丁烷塔回流罐D-210底部抽出管线弯头', rate: '0.05', minThick: '6.82', thinRate: '20.38%', level: 'level3', posX: 0.75, posY: 0.95 },
+            { device: '烷基化装置', location: '脱异丁烷塔顶空冷器EC-202出口管线弯头', rate: '0.02', minThick: '8.01', thinRate: '24.12%', level: 'level3', posX: 0.8, posY: 0.92 },
+            { device: '烷基化装置', location: '脱异丁烷塔顶空冷器EC-202入口管线弯头', rate: '0.03', minThick: '6.91', thinRate: '19.45%', level: 'level3', posX: 0.85, posY: 0.9 },
+            { device: '烷基化装置', location: '脱正丁烷塔顶空冷EC-203A入口管线弯头', rate: '0.02', minThick: '6.34', thinRate: '24.42%', level: 'level3', posX: 0.9, posY: 0.88 },
+            { device: '烷基化装置', location: '脱异丁烷塔回流罐D-210底部抽出管线2号弯头', rate: '0', minThick: '6.46', thinRate: '24.61%', level: 'level3', posX: 0.78, posY: 0.98 },
+            { device: '加氢裂化装置', location: '尾气自罐D-208至管AG-12401管线', rate: '0.01', minThick: '5.25', thinRate: '19.24%', level: 'level3', posX: 0.5, posY: 0.7 },
+            { device: '加氢裂化装置', location: '酸性水自罐D-104出装置管线', rate: '0.02', minThick: '4.99', thinRate: '23.20%', level: 'level3', posX: 0.55, posY: 0.68 },
+            { device: '加氢裂化装置', location: '热闪蒸气自A-102至罐D-103管线', rate: '0.01', minThick: '10.91', thinRate: '0.00%', level: 'level3', posX: 0.48, posY: 0.72 }
+        ];
+
+        function calculateNodeStats() {
+            const stats = {};
+            
+            tableData.forEach(item => {
+                if (!stats[item.device]) {
+                    stats[item.device] = { level1: 0, level2: 0, level3: 0 };
+                }
+                
+                if (item.level === 'level1') {
+                    stats[item.device].level1++;
+                } else if (item.level === 'level2') {
+                    stats[item.device].level2++;
+                } else {
+                    stats[item.device].level3++;
+                }
+            });
+            
+            return stats;
+        }
+
+        const nodeStats = calculateNodeStats();
+
+        function getNodeStatsByName(deviceName) {
+            return nodeStats[deviceName] || { level1: 0, level2: 0, level3: 0 };
+        }
+
+        const nodeDefs = [
+            { id: 'atmos', name: '常减压蒸馏', x: 175, y: 50, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.5, y: 0.3, scale: 1.0 } },
+            { id: 'coking', name: '焦化装置', x: 70, y: 150, pts: 8, s: [0, 1, 7], icon: '🏭', zoomArea: { x: 0.25, y: 0.55, scale: 1.0 } },
+            { id: 'catform', name: '重整装置', x: 175, y: 150, pts: 4, s: [1, 0, 3], icon: '🏭', zoomArea: { x: 0.5, y: 0.55, scale: 1.0 } },
+            { id: 'fcc', name: '催化装置', x: 280, y: 150, pts: 6, s: [3, 0, 3], icon: '🏭', zoomArea: { x: 0.7, y: 0.55, scale: 1.0 } },
+            { id: 'gasoline', name: '催化汽油加氢', x: 385, y: 150, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.85, y: 0.55, scale: 1.0 } },
+            { id: 'storage', name: '储运装置', x: 70, y: 250, pts: 5, s: [0, 0, 5], icon: '🏭', zoomArea: { x: 0.3, y: 0.7, scale: 1.0 } },
+            { id: 'alkylate', name: '烷基化装置', x: 175, y: 250, pts: 8, s: [0, 0, 8], icon: '🏭', zoomArea: { x: 0.5, y: 0.7, scale: 1.0 } },
+            { id: 'hydrocrack', name: '加氢裂化装置', x: 280, y: 250, pts: 5, s: [0, 0, 5], icon: '🏭', zoomArea: { x: 0.7, y: 0.7, scale: 1.0 } },
+            { id: 'sulfur', name: '硫磺回收', x: 385, y: 250, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.85, y: 0.7, scale: 1.0 } },
+            { id: 'residue', name: '渣油加氢', x: 70, y: 350, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.3, y: 0.85, scale: 1.0 } },
+            { id: 'delaycoke', name: '延迟焦化', x: 175, y: 350, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.5, y: 0.85, scale: 1.0 } },
+            { id: 'jetfuel', name: '航煤加氢', x: 280, y: 350, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.7, y: 0.85, scale: 1.0 } },
+            { id: 'pp', name: '聚丙烯', x: 385, y: 350, pts: 0, s: [0, 0, 0], icon: '🏭', zoomArea: { x: 0.85, y: 0.85, scale: 1.0 } },
+        ];
+        
+        // 显示用连接线（只连接附近节点）
+        const edges = [
+            // 常减压连接
+            ['atmos', 'coking'],
+            ['atmos', 'catform'],
+            // 第一行水平连接
+            ['coking', 'catform'],
+            ['catform', 'fcc'],
+            ['fcc', 'gasoline'],
+            // 垂直连接（第一行到第二行）
+            ['coking', 'storage'],
+            ['catform', 'alkylate'],
+            ['fcc', 'hydrocrack'],
+            // 第二行连接
+            ['alkylate', 'sulfur'],
+            // 垂直连接（第二行到第三行）
+            ['storage', 'residue'],
+            ['alkylate', 'delaycoke'],
+            ['hydrocrack', 'jetfuel'],
+            // 第三行连接
+            ['residue', 'delaycoke'],
+            ['delaycoke', 'jetfuel']
+        ];
+        
+        // 真实连接关系（鼠标悬停时显示）
+        const realConnections = {
+            'atmos': ['coking', 'catform', 'fcc', 'hydrocrack', 'storage'],
+            'coking': ['alkylate', 'sulfur'],
+            'catform': ['fcc', 'gasoline'],
+            'fcc': ['pp', 'alkylate'],
+            'storage': ['alkylate'],
+            'hydrocrack': ['alkylate', 'jetfuel']
+        };
+        
+        const nodeDeviceMap = {
+            '常减压蒸馏': '常减压蒸馏',
+            '焦化装置': '焦化装置',
+            '催化装置': '催化装置',
+            '重整装置': '重整装置',
+            '储运装置': '储运装置',
+            '烷基化装置': '烷基化装置',
+            '加氢裂化装置': '加氢裂化装置',
+            '聚丙烯': '聚丙烯',
+            '催化汽油加氢': '催化汽油加氢',
+            '硫磺回收': '硫磺回收',
+            '渣油加氢': '渣油加氢',
+            '延迟焦化': '延迟焦化',
+            '航煤加氢': '航煤加氢'
+        };
+        
+        const flowCharts = [
+            {
+                name: '工艺总流程图',
+                nodes: nodeDefs,
+                connections: edges
+            }
+        ];
+
+        let currentChartIndex = 0;
+        let currentFilter = 'all';
+
+        function updateTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentTime').textContent = timeStr;
+            updateLastUpdate();
+        }
+
+        function updateLastUpdate() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('lastUpdate').textContent = dateStr + ' ' + timeStr;
+        }
+
+        function calculateMonitoringDays() {
+            const startDate = new Date('2024-11-08');
+            const now = new Date();
+            const diffTime = Math.abs(now - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function updateMonitoringDays() {
+            const days = calculateMonitoringDays();
+            document.getElementById('daysCount').textContent = days;
+            document.getElementById('daysDisplay').textContent = days + ' 天';
+        }
+
+        function toggleDropdown(card) {
+            const wrapper = card.closest('.dropdown-wrapper');
+            const dropdown = wrapper.querySelector('.dropdown-content');
+            const isActive = dropdown.classList.contains('active');
+            
+            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('active'));
+            
+            if (!isActive) {
+                dropdown.classList.add('active');
+                const dropdownId = dropdown.id;
+                if (dropdownId === 'dropdown-4') {
+                    renderHighThinRateItems();
+                } else if (dropdownId === 'dropdown-5') {
+                    renderHighCorrosionRateItems();
+                }
+            }
+        }
+
+        function showDevicePoints(deviceName, element) {
+            const wrapper = element.closest('.dropdown-wrapper');
+            const subMenu = wrapper.querySelector('.side-menu');
+            
+            const devicePoints = tableData.filter(item => item.device === deviceName);
+            
+            let html = `<div class="sub-menu-title">${deviceName} - 监测点列表</div>`;
+            devicePoints.forEach((item, idx) => {
+                const originalIndex = tableData.findIndex(t => t.location === item.location && t.device === item.device);
+                let riskColor = '#10b981';
+                let riskText = '正常';
+                if (item.level === 'level1') {
+                    riskColor = '#ef4444';
+                    riskText = '一级风险';
+                } else if (item.level === 'level2') {
+                    riskColor = '#f59e0b';
+                    riskText = '二级风险';
+                }
+                
+                html += `
+                    <div class="sub-menu-item" onclick="goToDetail(${originalIndex})">
+                        <div style="flex: 1;">
+                            <div style="font-size: 12px; margin-bottom: 4px;">${item.location}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">
+                                腐蚀速率: ${item.rate} mm/y | 最小壁厚: ${item.minThick} mm
+                            </div>
+                        </div>
+                        <div style="color: ${riskColor}; font-size: 11px; font-weight: 600;">
+                            ${riskText}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            subMenu.innerHTML = html;
+            subMenu.classList.add('active');
+        }
+
+        function renderHighThinRateItems() {
+            const sortedData = [...tableData].sort((a, b) => 
+                parseFloat(b.thinRate) - parseFloat(a.thinRate)
+            );
+            const topItems = sortedData.filter(item => parseFloat(item.thinRate) >= 10).slice(0, 11);
+            
+            document.getElementById('dropdown-4').innerHTML = topItems.map(item => {
+                const originalIndex = tableData.findIndex(t => t.location === item.location && t.device === item.device);
+                let riskColor = '#ef4444';
+                if (item.level === 'level2') riskColor = '#f59e0b';
+                if (item.level === 'level3') riskColor = '#10b981';
+                
+                return `
+                    <div class="sub-menu-item" onclick="goToDetail(${originalIndex})">
+                        <span style="flex: 1;">${item.device}-${item.location}</span>
+                        <span class="sub-value" style="color: ${riskColor};">减薄率 ${item.thinRate}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHighCorrosionRateItems() {
+            const sortedData = [...tableData].sort((a, b) => 
+                parseFloat(b.rate) - parseFloat(a.rate)
+            );
+            const topItems = sortedData.filter(item => parseFloat(item.rate) >= 0.01).slice(0, 3);
+            
+            document.getElementById('dropdown-5').innerHTML = topItems.map(item => {
+                const originalIndex = tableData.findIndex(t => t.location === item.location && t.device === item.device);
+                let riskColor = '#ef4444';
+                if (item.level === 'level2') riskColor = '#f59e0b';
+                if (item.level === 'level3') riskColor = '#10b981';
+                
+                return `
+                    <div class="sub-menu-item" onclick="goToDetail(${originalIndex})">
+                        <span style="flex: 1;">${item.device}-${item.location}</span>
+                        <span class="sub-value" style="color: ${riskColor};">${item.rate} mm/年</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-wrapper')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('active'));
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            updateMonitoringDays();
+            setInterval(updateTime, 1000);
+        });
+
+        function sortByRisk(data) {
+            const riskOrder = { 'level1': 1, 'level2': 2, 'level3': 3 };
+            return [...data].sort((a, b) => {
+                if (riskOrder[a.level] !== riskOrder[b.level]) {
+                    return riskOrder[a.level] - riskOrder[b.level];
+                }
+                const rateA = parseFloat(a.rate);
+                const rateB = parseFloat(b.rate);
+                return rateB - rateA;
+            });
+        }
+
+        function renderTable(data) {
+            const sortedData = sortByRisk(data);
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = sortedData.map((item, displayIndex) => {
+                // 找到原始数据中的索引
+                const originalIndex = tableData.findIndex(t => t.location === item.location && t.device === item.device);
+                return `
+                <tr onclick="goToDetail(${originalIndex})" style="cursor: pointer;">
+                    <td><span class="device-tag">${item.device}</span></td>
+                    <td>${item.location}</td>
+                    <td class="rate-${item.level === 'level1' ? 'danger' : item.level === 'level2' ? 'warning' : 'normal'}">${item.rate} mm/y</td>
+                    <td>${item.minThick} mm</td>
+                    <td class="rate-${item.level === 'level1' ? 'danger' : item.level === 'level2' ? 'warning' : 'normal'}">${item.thinRate}</td>
+                </tr>
+            `;
+            }).join('');
+        }
+        
+        function goToDetail(index) {
+            window.location.href = `pipe_detail.html?index=${index}`;
+        }
+
+        function filterTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = tableData.filter(item => {
+                const matchesSearch = item.device.toLowerCase().includes(search) || item.location.toLowerCase().includes(search);
+                const matchesFilter = currentFilter === 'all' || item.level === currentFilter;
+                return matchesSearch && matchesFilter;
+            });
+            renderTable(filtered);
+        }
+
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterTable();
+        }
+
+        let flowChart = null;
+        let deviceChart = null;
+        let currentView = 'overview';
+        let currentDevice = null;
+        let mapScale = 1;
+        let mapOffsetX = 0;
+        let mapOffsetY = 0;
+        let isDragging = false;
+        let startDragX = 0;
+        let startDragY = 0;
+        let imgElement = null;
+        let containerElement = null;
+        
+        function getNodeColor(node) {
+            const stats = getNodeStatsByName(node.name);
+            const hasLevel1 = stats.level1 > 0;
+            const hasLevel2 = stats.level2 > 0;
+            
+            if (hasLevel1) return '#ef4444';
+            if (hasLevel2) return '#f59e0b';
+            return '#3b82f6';
+        }
+        
+        function getPointColor(level) {
+            if (level === 'level1') return '#ef4444';
+            if (level === 'level2') return '#f59e0b';
+            return '#10b981';
+        }
+        
+        function generateRightAngleLink(sourceNode, targetNode) {
+            const source = nodeDefs.find(n => n.id === sourceNode);
+            const target = nodeDefs.find(n => n.id === targetNode);
+            if (!source || !target) return [];
+            
+            const sx = source.x;
+            const sy = source.y;
+            const tx = target.x;
+            const ty = target.y;
+            
+            const midX = (sx + tx) / 2;
+            const midY = (sy + ty) / 2;
+            
+            if (Math.abs(tx - sx) > Math.abs(ty - sy)) {
+                return [
+                    { x: sx, y: sy },
+                    { x: midX, y: sy },
+                    { x: midX, y: ty },
+                    { x: tx, y: ty }
+                ];
+            } else {
+                return [
+                    { x: sx, y: sy },
+                    { x: sx, y: midY },
+                    { x: tx, y: midY },
+                    { x: tx, y: ty }
+                ];
+            }
+        }
+        
+        function renderOverviewChart() {
+            const chartDom = document.getElementById('flowChart');
+            chartDom.innerHTML = '';
+            
+            const existingHeader = document.querySelector('.device-header-bar');
+            if (existingHeader) existingHeader.remove();
+            const existingLeft = document.querySelector('.device-left-panel');
+            if (existingLeft) existingLeft.remove();
+            
+            const legendPanel = document.querySelector('.legend-panel');
+            if (legendPanel) legendPanel.style.display = 'none';
+            
+            flowChart = echarts.init(chartDom);
+            
+            const nodes = nodeDefs.map(node => {
+                const stats = getNodeStatsByName(node.name);
+                const hasHighRisk = stats.level1 > 0;
+                const hasMediumRisk = stats.level2 > 0;
+                const hasAnyRisk = hasHighRisk || hasMediumRisk;
+                const totalPoints = stats.level1 + stats.level2 + stats.level3;
+                const hasPoints = totalPoints > 0;
+                
+                let statusClass = 'online';
+                let statusText = '在线';
+                let statusColor = '#10b981';
+                let statusBgColor = 'rgba(16, 185, 129, 0.15)';
+                let borderColor = 'rgba(226,232,240,0.5)';
+                let pointsText = `${totalPoints} 个`;
+                
+                if (!hasPoints) {
+                    statusClass = 'offline';
+                    statusText = '无';
+                    statusColor = '#94a3b8';
+                    statusBgColor = 'rgba(148, 163, 184, 0.15)';
+                    pointsText = '0 个';
+                } else if (hasHighRisk) {
+                    statusClass = 'warning';
+                    statusText = '一级风险';
+                    statusColor = '#ef4444';
+                    statusBgColor = 'rgba(239, 68, 68, 0.15)';
+                    borderColor = '#ef4444';
+                } else if (hasMediumRisk) {
+                    statusClass = 'warning';
+                    statusText = '二级风险';
+                    statusColor = '#f59e0b';
+                    statusBgColor = 'rgba(245, 158, 11, 0.15)';
+                    borderColor = '#f59e0b';
+                }
+                
+                return {
+                    id: node.id,
+                    name: node.name,
+                    x: node.x,
+                    y: node.y,
+                    value: totalPoints,
+                    symbolSize: [100, 85],
+                    symbol: 'roundRect',
+                    symbolKeepAspect: true,
+                    itemStyle: {
+                        color: 'rgba(255,255,255,0.98)',
+                        shadowColor: 'rgba(59,130,246,0.05)',
+                        shadowBlur: 8,
+                        shadowOffsetY: 2,
+                        borderColor: borderColor,
+                        borderWidth: hasAnyRisk ? 2 : 1,
+                        borderRadius: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: `{name|${node.name}}\n{stat1|监控点}{val1|${pointsText}}\n{stat2|状态}{val2|${statusText}}`,
+                        rich: {
+                            name: {
+                                color: '#1e293b',
+                                fontSize: 14,
+                                fontWeight: '700',
+                                lineHeight: 20,
+                                padding: [0, 0, 8, 0]
+                            },
+                            stat1: {
+                                color: '#64748b',
+                                fontSize: 11,
+                                lineHeight: 16
+                            },
+                            val1: {
+                                color: '#1e293b',
+                                fontSize: 11,
+                                fontWeight: '600',
+                                backgroundColor: '#f1f5f9',
+                                borderRadius: 4,
+                                padding: [4, 8, 4, 8]
+                            },
+                            stat2: {
+                                color: '#64748b',
+                                fontSize: 11,
+                                lineHeight: 16
+                            },
+                            val2: {
+                                color: statusColor,
+                                fontSize: 11,
+                                fontWeight: '600',
+                                backgroundColor: statusBgColor,
+                                borderRadius: 4,
+                                padding: [6, 12, 6, 12]
+                            }
+                        },
+                        align: 'center',
+                        verticalAlign: 'middle',
+                        distance: 0
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: node,
+                    hasRisk: hasAnyRisk,
+                    statusClass: statusClass
+                };
+            });
+            
+            const links = edges.map(([source, target]) => {
+                const sourceNode = nodeDefs.find(n => n.id === source);
+                const targetNode = nodeDefs.find(n => n.id === target);
+                
+                const hasSourceRisk = sourceNode && (sourceNode.s[0] > 0 || sourceNode.s[1] > 0);
+                const hasTargetRisk = targetNode && (targetNode.s[0] > 0 || targetNode.s[1] > 0);
+                
+                let lineColor = '#94a3b8';
+                if (hasSourceRisk || hasTargetRisk) {
+                    lineColor = '#f59e0b';
+                }
+                
+                return {
+                    source,
+                    target,
+                    lineStyle: {
+                        color: lineColor,
+                        width: 4,
+                        type: 'solid',
+                        opacity: 0.5,
+                        curveness: 0
+                    },
+                    symbol: ['none', 'none']
+                };
+            });
+            
+            const option = {
+                backgroundColor: 'rgba(30, 41, 59, 0.2)',
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        if (params.dataType === 'edge') return '';
+                        const node = params.data.data;
+                        const stats = getNodeStatsByName(node.name);
+                        const totalPoints = stats.level1 + stats.level2 + stats.level3;
+                        return `
+                            <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:#1e293b">${node.name}</div>
+                            <div style="display:grid;grid-template-columns:auto auto;gap:6px 16px;font-size:12px">
+                                <span style="color:#64748b">监控点总数</span>
+                                <span style="color:#3b82f6;font-weight:600">${totalPoints}个</span>
+                                <span style="color:#64748b">正常运行</span>
+                                <span style="color:#10b981;font-weight:600">${stats.level3}个</span>
+                                <span style="color:#64748b">一级风险</span>
+                                <span style="color:#ef4444;font-weight:600">${stats.level1}个</span>
+                                <span style="color:#64748b">二级风险</span>
+                                <span style="color:#f59e0b;font-weight:600">${stats.level2}个</span>
+                            </div>
+                            <div style="border-top:1px solid rgba(226,232,240,0.5);margin-top:10px;padding-top:8px;color:#64748b;font-size:11px">
+                                点击查看装置分布图
+                            </div>
+                        `;
+                    },
+                    backgroundColor: '#ffffff',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    textStyle: {
+                        color: '#1e293b'
+                    },
+                    extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px;'
+                },
+                series: [{
+                    type: 'graph',
+                    layout: 'none',
+                    data: nodes,
+                    links: links,
+                    roam: true,
+                    focusNodeAdjacency: true,
+                    lineStyle: {
+                        opacity: 0.5,
+                        width: 6,
+                        type: 'solid',
+                        color: '#94a3b8',
+                        curveness: 0
+                    },
+                    emphasis: {
+                        focus: 'adjacency',
+                        lineStyle: {
+                            width: 8,
+                            color: '#60a5fa',
+                            shadowColor: 'rgba(96,165,250,0.6)',
+                            shadowBlur: 15
+                        },
+                        itemStyle: {
+                            borderWidth: 2,
+                            borderColor: '#60a5fa',
+                            borderRadius: 2
+                        }
+                    }
+                }]
+            };
+            
+            flowChart.setOption(option);
+            
+            setTimeout(() => {
+                const flowEdges = [
+                    ['atmos', 'catform'],
+                    ['catform', 'aromatic'],
+                    ['atmos', 'hydrocrack'],
+                    ['atmos', 'vacuum'],
+                    ['vacuum', 'fcc'],
+                    ['vacuum', 'coking'],
+                    ['vacuum', 'hydrocrack'],
+                    ['coking', 'fcc'],
+                    ['fcc', 'hydrocrack']
+                ];
+                
+                let flowIndex = 0;
+                const flowAnimation = setInterval(() => {
+                    if (flowIndex >= flowEdges.length) {
+                        clearInterval(flowAnimation);
+                        flowChart.dispatchAction({ type: 'downplay' });
+                        return;
+                    }
+                    
+                    flowChart.dispatchAction({ type: 'downplay' });
+                    
+                    const [source, target] = flowEdges[flowIndex];
+                    flowChart.dispatchAction({
+                        type: 'focusNodeAdjacency',
+                        seriesIndex: 0,
+                        dataIndex: nodes.findIndex(n => n.id === source)
+                    });
+                    
+                    flowIndex++;
+                }, 600);
+            }, 100);
+            
+            let lastClickEvent = null;
+            flowChart.getZr().on('click', function(params) {
+                lastClickEvent = params.event;
+            });
+            
+            flowChart.on('click', function(params) {
+                if (params.dataType === 'node') {
+                    drillDown(params.data.data, lastClickEvent);
+                }
+            });
+            
+            // 鼠标悬停时显示真实连接关系
+            flowChart.on('mouseover', function(params) {
+                if (params.dataType === 'node') {
+                    const nodeId = params.data.id;
+                    const nodeIndex = nodes.findIndex(n => n.id === nodeId);
+                    
+                    if (nodeIndex !== -1) {
+                        flowChart.dispatchAction({
+                            type: 'focusNodeAdjacency',
+                            seriesIndex: 0,
+                            dataIndex: nodeIndex
+                        });
+                    }
+                }
+            });
+            
+            flowChart.on('mouseout', function(params) {
+                if (params.dataType === 'node') {
+                    flowChart.dispatchAction({
+                        type: 'downplay'
+                    });
+                }
+            });
+        }
+        
+        function renderDeviceChart(node) {
+            const chartDom = document.getElementById('flowChart');
+            chartDom.innerHTML = '';
+            
+            containerElement = document.createElement('div');
+            containerElement.style.cssText = `
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                position: relative;
+                cursor: grab;
+            `;
+            
+            const headerBar = document.createElement('div');
+            headerBar.className = 'device-header-bar';
+            headerBar.style.cssText = `
+                position: absolute;
+                top: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(59, 130, 246, 0.3);
+                border-radius: 12px;
+                padding: 14px 28px;
+                z-index: 2000;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            `;
+            headerBar.innerHTML = `<div style="color: #60a5fa; font-size: 16px; font-weight: 700;">${node.name}装置单线图</div>`;
+            
+            headerBar.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            
+            headerBar.addEventListener('mousemove', (e) => {
+                e.stopPropagation();
+            });
+            
+            const leftPanel = document.createElement('div');
+            leftPanel.className = 'device-left-panel';
+            leftPanel.style.cssText = `
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                max-height: 155px;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(12px);
+                border-top: 1px solid rgba(59, 130, 246, 0.3);
+                border-radius: 0;
+                padding: 12px 16px;
+                z-index: 2000;
+                box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+                overflow-y: auto;
+                overflow-x: auto;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(96, 165, 250, 0.5) rgba(30, 41, 59, 0.5);
+            `;
+            
+            const dk = nodeDeviceMap[node.name] || node.name;
+            const devicePts = tableData.filter(d => d.device === dk || d.device.includes(dk.split('蒸馏')[0]));
+            const uniqueLocations = [...new Set(devicePts.map(pt => pt.location))];
+            
+            leftPanel.innerHTML = `
+                <div style="color: #60a5fa; font-size: 14px; font-weight: 700; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">管线信息</div>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                ${uniqueLocations.map(loc => {
+                    const pt = devicePts.find(d => d.location === loc);
+                    // 找到原始数据中的索引
+                    const originalIndex = tableData.findIndex(t => t.location === loc && t.device === (nodeDeviceMap[node.name] || node.name));
+                    const levelText = pt.level === 'level1' ? '一级风险' : pt.level === 'level2' ? '二级风险' : '三级正常';
+                    const levelColor = pt.level === 'level1' ? '#ef4444' : pt.level === 'level2' ? '#f59e0b' : '#10b981';
+                    return `
+                        <div onclick="goToDetail(${originalIndex})" style="padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid ${levelColor}; min-width: 180px; max-width: calc(33.33% - 12px); flex: 0 0 calc(33.33% - 12px); box-sizing: border-box; cursor: pointer; transition: all 0.2s;">
+                            <div style="color: white; font-size: 12px; font-weight: 600; margin-bottom: 4px;">${loc}</div>
+                            <div style="display: flex; gap: 8px; font-size: 10px;">
+                                <span style="color: ${levelColor}; font-weight: 600;">${levelText}</span>
+                                <span style="color: #94a3b8;">|</span>
+                                <span style="color: #94a3b8;">${pt.rate} mm/y</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+                </div>
+            `;
+            
+            leftPanel.addEventListener('wheel', (e) => {
+                e.stopPropagation();
+            }, { passive: false });
+            
+            leftPanel.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            
+            leftPanel.addEventListener('mousemove', (e) => {
+                e.stopPropagation();
+            });
+            
+            imgElement = document.createElement('img');
+            imgElement.src = '装置分布图更新.png';
+            imgElement.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                transform-origin: left top;
+                max-width: none;
+                max-height: none;
+                pointer-events: none;
+            `;
+            
+            imgElement.onload = () => {
+                const containerRect = chartDom.getBoundingClientRect();
+                const imgWidth = imgElement.naturalWidth;
+                const imgHeight = imgElement.naturalHeight;
+                
+                const scaleX = containerRect.width / imgWidth;
+                const scaleY = containerRect.height / imgHeight;
+                const baseScale = Math.min(scaleX, scaleY);
+                const targetScale = baseScale * 1.1;
+                
+                const scaleSteps = [0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0];
+                
+                // Find the closest scale step
+                let closestIndex = 0;
+                let smallestDiff = Math.abs(scaleSteps[0] - targetScale);
+                
+                for (let i = 1; i < scaleSteps.length; i++) {
+                    const diff = Math.abs(scaleSteps[i] - targetScale);
+                    if (diff < smallestDiff) {
+                        smallestDiff = diff;
+                        closestIndex = i;
+                    } else if (diff > smallestDiff) {
+                        break;
+                    }
+                }
+                
+                mapScale = scaleSteps[closestIndex];
+                
+                mapOffsetX = (containerRect.width - imgWidth * mapScale) / 2;
+                mapOffsetY = (containerRect.height - imgHeight * mapScale) / 2;
+                
+                updateMapTransform();
+            };
+            
+            containerElement.appendChild(imgElement);
+            
+            containerElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startDragX = e.clientX - mapOffsetX;
+                startDragY = e.clientY - mapOffsetY;
+                containerElement.style.cursor = 'grabbing';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    mapOffsetX = e.clientX - startDragX;
+                    mapOffsetY = e.clientY - startDragY;
+                    updateMapTransform();
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                containerElement.style.cursor = 'grab';
+            });
+            
+            containerElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                
+                let targetIndex;
+                if (e.deltaY > 0) {
+                    targetIndex = getScaleIndex(mapScale, 'out');
+                } else {
+                    targetIndex = getScaleIndex(mapScale, 'in');
+                }
+                
+                const scaleSteps = [0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0];
+                const newScale = scaleSteps[targetIndex];
+                
+                const rect = containerElement.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                mapOffsetX = mouseX - (mouseX - mapOffsetX) * (newScale / mapScale);
+                mapOffsetY = mouseY - (mouseY - mapOffsetY) * (newScale / mapScale);
+                mapScale = newScale;
+                
+                updateMapTransform();
+            });
+            
+            containerElement.appendChild(headerBar);
+            containerElement.appendChild(leftPanel);
+            chartDom.appendChild(containerElement);
+            
+            document.getElementById('backBtn').style.display = 'flex';
+            document.getElementById('panelTitleText').textContent = node.name + ' — 装置分布图';
+        }
+        
+        function updateMapTransform() {
+            if (imgElement && containerElement) {
+                const containerRect = containerElement.getBoundingClientRect();
+                const imgWidth = imgElement.naturalWidth || containerRect.width;
+                const imgHeight = imgElement.naturalHeight || containerRect.height;
+                
+                imgElement.style.transform = `translate(${mapOffsetX}px, ${mapOffsetY}px) scale(${mapScale})`;
+                imgElement.style.transformOrigin = 'left top';
+            }
+        }
+        
+        function drillDown(node, event) {
+            const overlay = document.getElementById('flowExpandOverlay');
+            
+            if (event && event.clientX !== undefined) {
+                const parentRect = overlay.parentElement.getBoundingClientRect();
+                const startX = ((event.clientX - parentRect.left) / parentRect.width * 100) + '%';
+                const startY = ((event.clientY - parentRect.top) / parentRect.height * 100) + '%';
+                overlay.style.setProperty('--start-x', startX);
+                overlay.style.setProperty('--start-y', startY);
+                overlay.style.setProperty('--start-size', '90px');
+            } else {
+                overlay.style.setProperty('--start-x', '50%');
+                overlay.style.setProperty('--start-y', '50%');
+                overlay.style.setProperty('--start-size', '80px');
+            }
+            
+            overlay.classList.remove('closing');
+            overlay.classList.add('active');
+            
+            setTimeout(() => {
+                currentView = 'detail';
+                currentDevice = node;
+                if (flowChart) flowChart.dispose();
+                
+                const legendPanel = document.querySelector('.legend-panel');
+                if (legendPanel) legendPanel.style.display = 'block';
+                
+                renderDeviceChart(node);
+                
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                }, 150);
+            }, 450);
+        }
+        
+        function backToOverview() {
+            currentView = 'overview';
+            currentDevice = null;
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('panelTitleText').textContent = '工艺流程图';
+            renderOverviewChart();
+        }
+        
+        // Helper function to get next/prev scale index
+        function getScaleIndex(scale, direction) {
+            const scaleSteps = [0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0];
+            const minScale = scaleSteps[0];
+            const maxScale = scaleSteps[scaleSteps.length - 1];
+            
+            // First clamp scale to our min/max
+            const clampedScale = Math.max(minScale, Math.min(maxScale, scale));
+            
+            // Find the exact or closest step index
+            let closestIndex = 0;
+            let smallestDiff = Math.abs(scaleSteps[0] - clampedScale);
+            
+            for (let i = 1; i < scaleSteps.length; i++) {
+                const diff = Math.abs(scaleSteps[i] - clampedScale);
+                if (diff < smallestDiff) {
+                    smallestDiff = diff;
+                    closestIndex = i;
+                } else if (diff > smallestDiff) {
+                    break; // Since array is sorted, we can stop early
+                }
+            }
+            
+            if (direction === 'in') {
+                return Math.min(closestIndex + 1, scaleSteps.length - 1);
+            } else {
+                return Math.max(closestIndex - 1, 0);
+            }
+        }
+        
+        function zoomIn() {
+            if (currentView === 'detail' && imgElement) {
+                const container = document.getElementById('flowChart');
+                const containerRect = container.getBoundingClientRect();
+                const scaleSteps = [0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0];
+                
+                const nextIndex = getScaleIndex(mapScale, 'in');
+                const newScale = scaleSteps[nextIndex];
+                
+                const centerX = containerRect.width / 2;
+                const centerY = containerRect.height / 2;
+                mapOffsetX = centerX - (centerX - mapOffsetX) * (newScale / mapScale);
+                mapOffsetY = centerY - (centerY - mapOffsetY) * (newScale / mapScale);
+                mapScale = newScale;
+                updateMapTransform();
+            }
+        }
+        
+        function zoomOut() {
+            if (currentView === 'detail' && imgElement) {
+                const container = document.getElementById('flowChart');
+                const containerRect = container.getBoundingClientRect();
+                const scaleSteps = [0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0];
+                
+                const prevIndex = getScaleIndex(mapScale, 'out');
+                const newScale = scaleSteps[prevIndex];
+                
+                const centerX = containerRect.width / 2;
+                const centerY = containerRect.height / 2;
+                mapOffsetX = centerX - (centerX - mapOffsetX) * (newScale / mapScale);
+                mapOffsetY = centerY - (centerY - mapOffsetY) * (newScale / mapScale);
+                mapScale = newScale;
+                updateMapTransform();
+            }
+        }
+        
+        function resetView() {
+            if (currentView === 'detail' && imgElement) {
+                const container = document.getElementById('flowChart');
+                const containerRect = container.getBoundingClientRect();
+                const imgWidth = imgElement.naturalWidth;
+                const imgHeight = imgElement.naturalHeight;
+                const scaleX = containerRect.width / imgWidth;
+                const scaleY = containerRect.height / imgHeight;
+                const baseScale = Math.min(scaleX, scaleY);
+                const targetScale = baseScale * 1.1;
+                
+                const scaleSteps = [0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0];
+                
+                // Find the closest scale step
+                let closestIndex = 0;
+                let smallestDiff = Math.abs(scaleSteps[0] - targetScale);
+                
+                for (let i = 1; i < scaleSteps.length; i++) {
+                    const diff = Math.abs(scaleSteps[i] - targetScale);
+                    if (diff < smallestDiff) {
+                        smallestDiff = diff;
+                        closestIndex = i;
+                    } else if (diff > smallestDiff) {
+                        break;
+                    }
+                }
+                
+                mapScale = scaleSteps[closestIndex];
+                mapOffsetX = (containerRect.width - imgWidth * mapScale) / 2;
+                mapOffsetY = (containerRect.height - imgHeight * mapScale) / 2;
+                
+                updateMapTransform();
+            }
+        }
+
+        function initStatusChart() {
+            const chartDom = document.getElementById('statusChart');
+            const chart = echarts.init(chartDom);
+            
+            const statusData = [
+                { name: '在线', value: 41, color: '#10b981' },
+                { name: '异常', value: 0, color: '#f59e0b' },
+                { name: '离线', value: 0, color: '#64748b' }
+            ];
+            const total = statusData.reduce((sum, item) => sum + item.value, 0);
+            const onlineCount = statusData.find(d => d.name === '在线')?.value || 0;
+            
+            const isAllOnline = statusData.find(d => d.name === '在线')?.value === total;
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return `${params.name}: ${params.value}个`;
+                    },
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                    borderWidth: 1,
+                    textStyle: { color: '#fff' },
+                    padding: [8, 12]
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['55%', '75%'],
+                    center: ['50%', '50%'],
+                    startAngle: 90,
+                    itemStyle: {
+                        borderRadius: isAllOnline ? 0 : 4,
+                        borderColor: '#fff',
+                        borderWidth: isAllOnline ? 0 : 2
+                    },
+                    label: { show: false },
+                    emphasis: {
+                        scale: true,
+                        scaleSize: 5
+                    },
+                    data: statusData.map(item => ({
+                        value: item.value,
+                        name: item.name,
+                        itemStyle: { color: item.color }
+                    }))
+                }]
+            };
+            
+            chart.setOption(option);
+            return chart;
+        }
+        
+        function initRiskChart() {
+            const chartDom = document.getElementById('riskChart');
+            const chart = echarts.init(chartDom);
+            
+            const riskData = [
+                { name: '一级风险', value: 4, color: '#ef4444' },
+                { name: '二级风险', value: 1, color: '#f59e0b' },
+                { name: '三级正常', value: 31, color: '#10b981' }
+            ];
+            const total = riskData.reduce((sum, item) => sum + item.value, 0);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return `${params.name}: ${params.value}个`;
+                    },
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    borderWidth: 1,
+                    textStyle: { color: '#fff' },
+                    padding: [8, 12]
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['55%', '75%'],
+                    center: ['50%', '50%'],
+                    startAngle: 90,
+                    itemStyle: {
+                        borderRadius: 4,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: { show: false },
+                    emphasis: {
+                        scale: true,
+                        scaleSize: 5
+                    },
+                    data: riskData.map(item => ({
+                        value: item.value,
+                        name: item.name,
+                        itemStyle: { color: item.color }
+                    }))
+                }],
+                graphic: {
+                    type: 'group',
+                    left: 'center',
+                    top: 'center',
+                    children: [{
+                        type: 'text',
+                        style: {
+                            text: total.toString(),
+                            textAlign: 'center',
+                            fill: '#1e293b',
+                            fontSize: 24,
+                            fontWeight: '700',
+                            fontFamily: 'Inter, system-ui, sans-serif'
+                        }
+                    }]
+                }
+            };
+            
+            chart.setOption(option);
+            return chart;
+        }
+        
+        let statusChart = null;
+        let riskChart = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            renderTable(tableData);
+            
+            setTimeout(() => {
+                renderOverviewChart();
+                statusChart = initStatusChart();
+                riskChart = initRiskChart();
+            }, 300);
+        });
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const chart = currentView === 'overview' ? flowChart : deviceChart;
+                if (chart) chart.resize();
+                if (statusChart) statusChart.resize();
+                if (riskChart) riskChart.resize();
+            }, 150);
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && currentView === 'detail') {
+                backToOverview();
+            }
+        });
+    </script>
+</body>
+</html>
